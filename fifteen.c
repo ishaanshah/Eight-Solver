@@ -96,14 +96,33 @@ int main(int argc, string argv[])
             fprintf(file, "\n");
         }
         fflush(file);
-
+        
+        // open output file
+        FILE *output = fopen("output","wb");
+        if(output == NULL)
+        {
+            return 4;
+        }
+        
+        // write config of board in output (for input of solver.c)
+        for(int i = 0; i < d; i++)
+        {
+            for(int j = 0; j < d; j++)
+            {
+                fwrite(&board[i][j], sizeof(int), 1, output);
+            }
+        }
+        
+        // close output file
+        fclose(output);
+        
         // check for win
         if (won())
         {
             printf("ftw!\n");
             break;
         }
-
+        
         // prompt for move
         printf("Tile to move: ");
         int tile = get_int();
