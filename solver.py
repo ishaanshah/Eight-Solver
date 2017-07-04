@@ -1,9 +1,8 @@
 # Game logic and design by arnisritins. https://github.com/arnisritins/15-Puzzle.
 
 from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
 
-# Initialize webdriver to communicate with webpage
+# Initialize webdriver to communicate with web page
 driver = webdriver.Chrome(r"C:\Users\ishaa\chromedriver.exe")
 driver.get("file:///F:/Projects/PycharmProjects/fifteen_solver/15-Puzzle/index.html")
 
@@ -38,11 +37,15 @@ def get_current_state():
             grid.insert(num_tile, Coordinate(i, j, str(num_tile)))
 
 
+def submit(tile):
+    input_box = driver.find_element_by_id("number")
+    input_box.send_keys(str(tile))
+    submit_btn = driver.find_element_by_id("submit")
+    submit_btn.click()
+
+
 def main():
     get_current_state()
-    for i in range(16):
-        print("{}-{}-{}".format(grid[i].x, grid[i].y, grid[i].tile))
-
     driver.close()
 
 if __name__ == "__main__":
