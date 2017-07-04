@@ -23,19 +23,27 @@ grid = []
 def get_current_state():
     for i in range(0, 4):
         for j in range(0, 4):
-            print(driver.find_element_by_id("cell-{}-{}".format(i, j)).text)
+            # get the tile from web page
+            tile = driver.find_element_by_id("cell-{}-{}".format(i, j)).text
+
+            # check for empty tile
+            if tile == '':
+                # set empty tile as 0
+                num_tile = 0
+            else:
+                # convert to integer
+                num_tile = int(tile)
+
+            # insert coordinates of tile in grid
+            grid.insert(num_tile, Coordinate(i, j, str(num_tile)))
 
 
 def main():
-    i = 0
-    for x in range(4):
-        for y in range(4):
-            grid.insert(i, Coordinate(x, y, i))
-            i = i + 1
-
     get_current_state()
-    driver.close()
+    for i in range(16):
+        print("{}-{}-{}".format(grid[i].x, grid[i].y, grid[i].tile))
 
+    driver.close()
 
 if __name__ == "__main__":
     main()
