@@ -9,17 +9,10 @@ driver = webdriver.Chrome(r"C:\Users\ishaa\chromedriver.exe")
 driver.get("file:///F:/Projects/PycharmProjects/fifteen_solver/15-Puzzle/index.html")
 
 # grid for puzzle
-grid = []
+grid = [[i for i in range(4)] for j in range(4)]
 
 # solved state of puzzle
-solved_grid = []
-
-# structure to store coordinates
-class Tile:
-    def __init__(self, x, y, num):
-        self.x = x
-        self.y = y
-        self.num = num
+solved_grid = [[1,2,3,4], [5,6,7,8], [9,10,11,12], [13,14,15,0]]
 
 # structure for nodes
 class Node:
@@ -32,18 +25,17 @@ class Node:
 
 def a_star():
     get_current_state()
-    start = Node(grid, None, None, 0)
-    start.f = heuristic(start)
+    start = Node(grid, None, 0, 0)
     end = Node(solved_grid, None, None, None)
 
-    closed_set = []
-    open_set = [start]
+    closed_list = []
+    open_list = [start]
 
     while len(open_set) != 0:
         current = min(open_set, key = attrgetter("f"))
 
-        if current.config == end.config:
-            return reconstruct_moves(closed_set, current)
+        if win(current.config):
+            return True
 
         open_set.remove(current)
         closed_set.append(current)
@@ -63,42 +55,41 @@ def a_star():
 
 # finds the neighnours of current config
 def find_neighbours(node):
-    for tile in node.config:
-        if tile.num == 0:
-            zero_tile = tile
-            break
+    j = [j for j in node.config if 0 in j][0]
+    zero_x = node.config.index(j)
+    zero_y = j.index(0)
+    neigbours = []
+    neigbour = [i for i in node.config]
 
-    neighbours = []
-    for tile in node.config:
-        if zero_tile.x + 1 == tile.x and zero_tile.y == tile.y:
-            neighbours.append(Node(swap(zero_tile, tile, node.config), None, None, node.g + 1))
-            break
+    if zero_x + 1 <= 3:
+        neigbour[zero_x + 1][zero_y], neigbour[zero_x][zero_y] = neigbour[zero_x][zero_y], neigbour[zero_x + 1][zero_y]
+        neigbours.append(neigbour)
 
-    for tile in node.config:
-        if zero_tile.x - 1 == tile.x and zero_tile.y == tile.y:
-            neighbours.append(Node(swap(zero_tile, tile, node.config), None, None, node.g + 1))
-            break
+    if zero_x - 1 >= 0:
+        neigbour[zero_x - 1][zero_y], neigbour[zero_x][zero_y] = neigbour[zero_x][zero_y], neigbour[zero_x - 1][zero_y]
+        neigbours.append(neigbour)
 
-    for tile in node.config:
-        if zero_tile.y - 1 == tile.y and zero_tile.x == tile.x:
-            neighbours.append(Node(swap(zero_tile, tile, node.config), None, None, node.g + 1))
-            break
+    if zero_y + 1 <= 3:
+        neigbour[zero_x][zero_y + 1], neigbour[zero_x][zero_y] = neigbour[zero_x][zero_y], neigbour[zero_x][zero_y + 1]
+        neigbours.append(neigbour)
 
-    for tile in node.config:
-        if zero_tile.y + 1 == tile.y and zero_tile.x == tile.x:
-            neighbours.append(Node(swap(zero_tile, tile, node.config), None, None, node.g + 1))
-            break
+    if zero_y - 1 >= 0:
+        neigbour[zero_x][zero_y - 1], neigbour[zero_x][zero_y] = neigbour[zero_x][zero_y], neigbour[zero_x][zero_y - 1]
+        neigbours.append(neigbour)
 
-    return neighbours
-
+    return neigbours
 
 # find heuristics
 def heuristic(node):
     dist = []
-    for tile in node.config:
-        for solved_tile in solved_grid:
-            if solved_tile.num == tile.num:
-                dist.append(manhattan_distance(tile, solved_tile))
+    for i in range(16):
+        j = [j for j in solved_grid if i in j][0]
+        s_x = solved_grid.index(j)
+        s_y = j.index(i)
+        k = [k for k in node.config if i in k][0]
+        n_x = node.config.index(k)
+        n_y = k.index(i)
+        dist.append(abs(s_x - n_x) + abs(s_y - n_y))
 
     return sum(dist)
 
@@ -106,23 +97,17 @@ def heuristic(node):
 def get_current_state():
     # empty the list
     grid[:] = []
-    for i in range(0, 4):
-        for j in range(0, 4):
-            # get the tile from web page
+    for i in range(4):
+        row = []
+        for j in range(4):
             tile = driver.find_element_by_id("cell-{}-{}".format(i, j)).text
-
-            # check for empty tile
+            # check for black tile
             if tile == '':
-                # set empty tile as 0
-                tile = "0"
+                tile ="0"
+            row.insert(j,int(tile))
 
-            # insert coordinates of tile in grid
-            grid.append(Tile(i, j, int(tile)))
-
-
-# find the taxicab distance between two points
-def manhattan_distance(start, end):
-    return abs(start.x - end.x) + abs(start.y - end.y)
+        # insert row in grid
+        grid.insert(i, row)
 
 
 def scramble():
@@ -139,39 +124,18 @@ def submit(tile):
     time.sleep(0.3) # wait for animation
 
 
-def swap(tile1, tile2, temp):
-    s_grid = [i for i in temp]
-    t1_index = s_grid.index(tile1)
-    t2_index = s_grid.index(tile2)
-    s_grid[t2_index] = tile1
-    s_grid[t1_index] = tile2
+def swap(tile1, tile2, grid):
+
+
     return s_grid
 
 
-def reconstruct_moves(open_set, current):
-    total_path = [current]
-    while current in open_set.parent.Keys:
-        current = cameFrom[current]
-        total_path.append(current)
-    return total_path
-
-
-def win(temp):
-    
-
 def main():
-    # create a solved board
-    num = 1
-    for i in range(4):
-        for j in range(4):
-            if i == 3 and j == 3:
-                solved_grid.append(Tile(i, j, 0))
-            else:
-                solved_grid.append(Tile(i, j, num))
-                num += 1
-
     scramble()
-    print(a_star())
+    get_current_state()
+    node = Node(grid, None, None, None)
+    for neighbour in find_neighbours(node):
+        print(neighbour)
 
 if __name__ == "__main__":
     main()
