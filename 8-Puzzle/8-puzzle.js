@@ -48,14 +48,14 @@
 		puzzle.innerHTML = '';
 		
 		var n = 1;
-		for(var i = 0; i <= 3; i++){
-			for(var j = 0; j <= 3; j++){
+		for(var i = 0; i <= 2; i++){
+			for(var j = 0; j <= 2; j++){
 				var cell = document.createElement('span');
 				cell.id = 'cell-'+i+'-'+j;
 				cell.style.left = (j*80+1*j+1)+'px';
 				cell.style.top = (i*80+1*i+1)+'px';
 				
-				if(n <= 15){
+				if(n <= 8){
 					cell.classList.add('number');
 					cell.classList.add((i%2==0 && j%2>0 || i%2>0 && j%2==0) ? 'dark' : 'light');
 					cell.innerHTML = (n++).toString();
@@ -157,9 +157,9 @@
 		var adjacent = [];
 		
 		// Gets all possible adjacent cells
-		if(row < 3){adjacent.push(getCell(row+1, col));}			
+		if(row < 2){adjacent.push(getCell(row+1, col));}
 		if(row > 0){adjacent.push(getCell(row-1, col));}
-		if(col < 3){adjacent.push(getCell(row, col+1));}
+		if(col < 2){adjacent.push(getCell(row, col+1));}
 		if(col > 0){adjacent.push(getCell(row, col-1));}
 		
 		return adjacent;
@@ -167,21 +167,21 @@
 	}
 	
 	/**
-	 * Chechs if the order of numbers is correct
+	 * Checks if the order of numbers is correct
 	 *
 	 */
 	function checkOrder(){
 		
 		// Checks if the empty cell is in correct position
-		if(getCell(3, 3).className != 'empty'){
+		if(getCell(2, 2).className != 'empty'){
 			return;
 		}
 	
 		var n = 1;
 		// Goes through all cells and checks numbers
-		for(var i = 0; i <= 3; i++){
-			for(var j = 0; j <= 3; j++){
-				if(n <= 15 && getCell(i, j).innerHTML != n.toString()){
+		for(var i = 0; i <= 2; i++){
+			for(var j = 0; j <= 2; j++){
+				if(n <= 8 && getCell(i, j).innerHTML != n.toString()){
 					// Order is not correct
 					return;
 				}
@@ -244,8 +244,8 @@
 	}
 	
 	function  search(cell){
-		for(var i = 0; i < 4; i++){
-			for(var j = 0; j < 4; j++){
+		for(var i = 0; i < 3; i++){
+			for(var j = 0; j < 3; j++){
 				if(cell == getCell(i, j).innerHTML){
 					return getCell(i,j);
 				}
