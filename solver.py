@@ -2,12 +2,13 @@
 
 import copy
 import time
+from collections import deque
 from operator import attrgetter
 from selenium import webdriver
 
-# Initialize webdriver to communicate with webpage
+# Initialize web driver to communicate with web page
 driver = webdriver.Chrome(r"C:\Users\ishaa\chromedriver.exe")
-driver.get("file:///F:/Projects/PycharmProjects/Eight_solver/8-Puzzle/index.html")
+driver.get("file:///E:/PyCharm%20Projects/8-Puzzle/index.html")
 
 # grid for puzzle
 grid = [[i for i in range(3)] for j in range(3)]
@@ -18,39 +19,48 @@ solved_grid = [[1, 2, 3], [4, 5, 6], [7, 8, 0]]
 
 # structure for nodes
 class Node:
-    def __init__(self, config, parent, f, g):
+    def __init__(self, config, parent, f, g, h):
         self.config = config
         self.parent = parent
         self.f = f
         self.g = g
+        self.h = h
+
+
+class Continue(Exception):
+    pass
 
 
 def a_star():
     get_current_state()
-    start = Node(grid, None, 0, 0)
-    end = Node(solved_grid, None, None, None)
+    start = Node(grid, None, heuristic(grid), 0, heuristic(grid))
+    end = Node(solved_grid, None, None, None, 0)
 
-    closed_list = []
-    open_list = [start]
+    closed_set = deque()
+    open_set = deque()
+    open_set.appendleft(start)
 
-    while len(open_list) != 0:
-        current = min(open_list, key=attrgetter("f"))
-        open_list.remove(current)
+    while len(open_set) != 0:
+        current = min(open_set, key=attrgetter("f"))
+        open_set.remove(current)
         for neighbour in find_neighbours(current):
             if same_state(neighbour.config, end.config):
                 return True
 
-            for node in open_list:
-                if same_state(node.config, neighbour.config) and node.f < neighbour.f:
-                    continue
+            try:
+                for node in closed_set:
+                    if same_state(node.config, neighbour.config):
+                        raise Continue
 
-            for node in closed_list:
-                if same_state(node.config, neighbour.config) and node.f < neighbour.f:
-                    continue
+            except Continue:
+                continue
 
-            open_list.append(neighbour)
-
-        closed_list.append(current)
+            else:
+                neighbour.g = current.g + 1
+                neighbour.h = heuristic(neighbour.config)
+                neighbour.f = neighbour.g + neighbour.h
+                open_set.appendleft(neighbour)
+        closed_set.appendleft(current)
     return False
 
 
@@ -65,42 +75,42 @@ def find_neighbours(node):
         neighbour_1 = copy.deepcopy(node.config)
         neighbour_1[zero_x + 1][zero_y], neighbour_1[zero_x][zero_y] = \
             neighbour_1[zero_x][zero_y], neighbour_1[zero_x + 1][zero_y]
-        neighbours.append(Node(neighbour_1, node, heuristic(neighbour_1) + (node.g + 1), node.g + 1))
+        neighbours.append(Node(neighbour_1, node, None, None, None))
 
     if zero_x - 1 >= 0:
         neighbour_2 = copy.deepcopy(node.config)
         neighbour_2[zero_x - 1][zero_y],  neighbour_2[zero_x][zero_y] =  \
             neighbour_2[zero_x][zero_y],  neighbour_2[zero_x - 1][zero_y]
-        neighbours.append(Node(neighbour_2, node, heuristic(neighbour_2) + (node.g + 1), node.g + 1))
+        neighbours.append(Node(neighbour_2, node, None, None, None))
 
     if zero_y + 1 <= 2:
         neighbour_3 = copy.deepcopy(node.config)
         neighbour_3[zero_x][zero_y + 1], neighbour_3[zero_x][zero_y] = \
             neighbour_3[zero_x][zero_y], neighbour_3[zero_x][zero_y + 1]
-        neighbours.append(Node(neighbour_3, node, heuristic(neighbour_3) + (node.g + 1), node.g + 1))
+        neighbours.append(Node(neighbour_3, node, None, None, None))
 
     if zero_y - 1 >= 0:
         neighbour_4 = copy.deepcopy(node.config)
         neighbour_4[zero_x][zero_y - 1], neighbour_4[zero_x][zero_y] = \
             neighbour_4[zero_x][zero_y], neighbour_4[zero_x][zero_y - 1]
-        neighbours.append(Node(neighbour_4, node, heuristic(neighbour_4) + (node.g + 1), node.g + 1))
+        neighbours.append(Node(neighbour_4, node, None, None, None))
 
     return neighbours
 
 
 # find heuristics
 def heuristic(config):
-    dist = []
-    for i in range(9):
+    dist = 0
+    for i in range(1, 9):
         j = [j for j in solved_grid if i in j][0]
         s_x = solved_grid.index(j)
         s_y = j.index(i)
         k = [k for k in config if i in k][0]
         n_x = config.index(k)
         n_y = k.index(i)
-        dist.append(abs(s_x - n_x) + abs(s_y - n_y))
+        dist += (abs(s_x - n_x) + abs(s_y - n_y))
 
-    return sum(dist)
+    return dist
 
 
 # get current state of board
@@ -126,19 +136,15 @@ def scramble():
 
 
 def same_state(grid1, grid2):
-    count = 0
     for i in range(3):
         for j in range(3):
-            if grid1[i][j] == grid2[i][j]:
-                count += 1
+            if grid1[i][j] != grid2[i][j]:
+                return False
 
-    if count == 9:
-        return True
-    else:
-        return False
+    return True
 
 
-# submit a number
+# submit a
 def submit(tile):
     input_box = driver.find_element_by_id("number")
     input_box.send_keys(str(tile))
@@ -149,9 +155,8 @@ def submit(tile):
 
 def main():
     scramble()
-    get_current_state()
     print(a_star())
-    #driver.close()
+
 
 if __name__ == "__main__":
     main()
